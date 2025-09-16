@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Document</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-50 text-gray-800 antialiased">
+  <header class="border-b bg-white">
+    <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+      <h1 class="text-2xl font-semibold tracking-tight">User Management</h1>
+    </div>
+  </header>
+  <section class="mt-8">
+    <div class="grid gap-4 md:grid-cols-3">
+      <div class="md:col-span-2 bg-white border rounded-2xl p-5 shadow-sm">
+        <h2 class="text-lg font-semibold mb-4">Create / Edit User</h2>
+        <form action="<%= novoUsuario.id ? '/users/edit/' + novoUsuario.id : '/users/criar' %>" method="POST"
+          class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm text-gray-600 mb-1">Full Name</label>
+            <input type="text" name="name" class="w-full rounded-xl border border-gray-300 bg-white px-3 py-2"
+              placeholder="Jane Doe" value="<%= novoUsuario.name || '' %>" />
+          </div>
+          <div>
+            <label class="block text-sm text-gray-600 mb-1">Username</label>
+            <input type="text" name="username" class="w-full rounded-xl border border-gray-300 bg-white px-3 py-2"
+              placeholder="@jane" value="<%= novoUsuario.username || '' %>" />
+          </div>
+          <div>
+            <label class="block text-sm text-gray-600 mb-1">Email</label>
+            <input type="email" name="email" class="w-full rounded-xl border border-gray-300 bg-white px-3 py-2"
+              placeholder="jane@example.com" value="<%= novoUsuario.email || '' %>" />
+          </div>
+          <div>
+            <label class="block text-sm text-gray-600 mb-1">Role</label>
+            <select name="role" class="w-full rounded-xl border border-gray-300 bg-white px-3 py-2">
+              <option value="VIEWER">Viewer</option>
+              <option value="EDITOR">Editor</option>
+              <option value="MANAGER">Manager</option>
+              <option value="ADMIN">Admin</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm text-gray-600 mb-1">Status</label>
+            <select name="status" class="w-full rounded-xl border border-gray-300 bg-white px-3 py-2">
+              <option value="ACTIVE">Active</option>
+              <option value="INVITED">Invited</option>
+              <option value="SUSPENDED">Suspended</option>
+              <option value="INACTIVE">Inactive</option>
+            </select>
+          </div>
+          <div class="sm:col-span-2 flex items-center justify-end gap-2 pt-2">
+            <a href="/users/lista" class="rounded-xl border px-4 py-2 text-sm hover:bg-gray-50">Cancel</a>
+            <button type="submit" class="rounded-xl bg-black text-white px-4 py-2 text-sm">
+              Save
+            </button>
+          </div>
+        </form>
+
+        </form>
+      </div>
+      <div class="bg-white border rounded-2xl p-5 shadow-sm">
+        <h3 class="text-sm font-semibold mb-3">Tips</h3>
+        <ul class="list-disc pl-5 text-sm text-gray-600 space-y-1">
+          <li>
+            This is purely static HTML/CSS; wire it up with your framework or
+            vanilla JS.
+          </li>
+          <li>Buttons and inputs are styled with Tailwind classes.</li>
+          <li>Table is horizontally scrollable on small screens.</li>
+          <li>Replace placeholder data with your real users.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <footer class="max-w-6xl mx-auto px-4 py-10 text-center text-xs text-gray-500">
+    Built with Tailwind CSS – no JavaScript included.
+  </footer>
+</body>
+
+</html>
