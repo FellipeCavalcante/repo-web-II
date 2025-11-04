@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pinterest Clone</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-gray-50">
+    <nav class="flex items-center justify-between px-6 py-4 bg-white shadow">
+      <div class="text-2xl font-bold text-red-500">MyPins</div>
+      <div class="space-x-4">
+        <% if (isLoggedIn) { %>
+        <span class="text-gray-700">Olá, <%= user.name %>!</span>
+        <a
+          href="/publish"
+          class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
+          >Publicar</a
+        >
+        <form action="/users/logout" method="POST" class="inline">
+          <button type="submit" class="text-gray-700 hover:text-red-500">
+            Sair
+          </button>
+        </form>
+        <% } else { %>
+        <a href="/login" class="text-gray-700 hover:text-red-500">Login</a>
+        <a
+          href="/signup"
+          class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
+          >Sign Up</a
+        >
+        <% } %>
+      </div>
+    </nav>
+
+    <main class="p-6">
+      <div class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold text-gray-800">Explore Pins</h1>
+
+        <div class="flex space-x-2">
+          <a
+            href="/?sortBy=recent&page=1"
+            class="px-3 py-2 rounded-lg <%= sortBy === 'recent' ? 'bg-red-500 text-white' : 'bg-gray-200 text-gray-700' %>"
+          >
+            Mais Recentes
+          </a>
+          <a
+            href="/?sortBy=popular&page=1"
+            class="px-3 py-2 rounded-lg <%= sortBy === 'popular' ? 'bg-red-500 text-white' : 'bg-gray-200 text-gray-700' %>"
+          >
+            Mais Populares
+          </a>
+        </div>
+      </div>
+
+      <div
+        id="posts-container"
+        class="columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4"
+        data-current-page="<%= currentPage %>"
+        data-sort-by="<%= sortBy %>"
+        data-is-logged-in="<%= isLoggedIn %>"
+      >
+        <% if (posts && posts.length > 0) { %> <% posts.forEach(post => { %>
+        <div class="break-inside-avoid relative group">
+          <img
+            src="<%= post.imageUrl %>"
+            alt="<%= post.title %>"
+            class="w-full rounded-lg shadow hover:opacity-90 transition cursor-pointer"
+          />
+          <div
+            class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all rounded-lg flex items-end p-4"
+          >
+            <div
+              class="text-white opacity-0 group-hover:opacity-100 transition-opacity w-full"
+            >
+              <h3 class="font-bold text-lg"><%= post.title %></h3>
+              <% if (post.description) { %>
+              <p class="text-sm mt-1"><%= post.description %></p>
+              <% } %>
+              <div class="flex justify-between items-center mt-2">
+                <span class="text-sm">Por <%= post.user.name %></span>
+                <div class="flex space-x-2">
+                  <% if (isLoggedIn) { %>
+                  <button
+                    onclick="handleLike(<%= post.id %>)"
+                    class="like-btn text-sm px-2 py-1 bg-white bg-opacity-20 rounded hover:bg-opacity-30 transition"
+                    data-post-id="<%= post.id %>"
+                  >
+                    ♥ <span class="like-count"><%= post.likeCount || 0 %></span>
+                  </button>
+                  <% } else { %>
+                  <span
+                    class="text-sm px-2 py-1 bg-white bg-opacity-20 rounded"
+                  >
+                    ♥ <%= post.likeCount || 0 %>
+                  </span>
+                  <% } %>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <% }); %> <% } else { %>
+        <div class="col-span-full text-center py-12">
+          <p class="text-gray-500 text-lg">Nenhum post encontrado.</p>
+          <% if (isLoggedIn) { %>
+          <a
+            href="/publish"
+            class="text-red-500 hover:underline mt-2 inline-block"
+            >Seja o primeiro a publicar!</a
+          >
+          <% } %>
+        </div>
+        <% } %>
+      </div>
+
+      <div id="loading" class="hidden text-center py-8">
+        <p class="text-gray-500">Carregando mais posts...</p>
+      </div>
+
+      <% if (posts && posts.length >= 12) { %>
+      <div class="text-center mt-8">
+        <button
+          id="load-more"
+          class="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
+        >
+          Carregar Mais
+        </button>
+      </div>
+      <% } %> <% if (error) { %>
+      <div
+        class="fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg"
+      >
+        <%= error %>
+      </div>
+      <% } %>
+    </main>
+
+    <script>
+      const postsContainer = document.getElementById("posts-container");
+      let currentPageNumber = parseInt(postsContainer.dataset.currentPage);
+      let isLoading = false;
+      const sortBy = postsContainer.dataset.sortBy;
+      const isUserLoggedIn = postsContainer.dataset.isLoggedIn === "true";
+
+      // Scroll Infinito
+      document
+        .getElementById("load-more")
+        ?.addEventListener("click", loadMorePosts);
+
+      window.addEventListener("scroll", () => {
+        if (
+          window.innerHeight + window.scrollY >=
+            document.body.offsetHeight - 500 &&
+          !isLoading
+        ) {
+          loadMorePosts();
+        }
+      });
+
+      async function loadMorePosts() {
+        if (isLoading) return;
+
+        isLoading = true;
+        document.getElementById("loading").classList.remove("hidden");
+        document.getElementById("load-more")?.classList.add("hidden");
+
+        try {
+          const response = await fetch(
+            `/posts/api/posts?page=${currentPageNumber + 1}&sortBy=${sortBy}`
+          );
+          const newPosts = await response.json();
+
+          if (newPosts.length > 0) {
+            const container = document.getElementById("posts-container");
+
+            newPosts.forEach((post) => {
+              let likeButtonHtml;
+              if (isUserLoggedIn) {
+                likeButtonHtml = `
+                  <button 
+                    onclick="handleLike(${post.id})" 
+                    class="like-btn text-sm px-2 py-1 bg-white bg-opacity-20 rounded hover:bg-opacity-30 transition"
+                    data-post-id="${post.id}"
+                  >
+                    ♥ <span class="like-count">${post.likeCount || 0}</span>
+                  </button>
+                `;
+              } else {
+                likeButtonHtml = `
+                  <span class="text-sm px-2 py-1 bg-white bg-opacity-20 rounded">
+                    ♥ ${post.likeCount || 0}
+                  </span>
+                `;
+              }
+
+              const postElement = `
+                <div class="break-inside-avoid relative group">
+                  <img
+                    src="${post.imageUrl}"
+                    alt="${post.title}"
+                    class="w-full rounded-lg shadow hover:opacity-90 transition cursor-pointer"
+                  />
+                  <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all rounded-lg flex items-end p-4">
+                    <div class="text-white opacity-0 group-hover:opacity-100 transition-opacity w-full">
+                      <h3 class="font-bold text-lg">${post.title}</h3>
+                      ${
+                        post.description
+                          ? `<p class="text-sm mt-1">${post.description}</p>`
+                          : ""
+                      }
+                      <div class="flex justify-between items-center mt-2">
+                        <span class="text-sm">Por ${post.user.name}</span>
+                        <div class="flex space-x-2">
+                          ${likeButtonHtml}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              `;
+              container.innerHTML += postElement;
+            });
+
+            currentPageNumber++;
+
+            if (newPosts.length >= 12) {
+              document.getElementById("load-more")?.classList.remove("hidden");
+            }
+          }
+        } catch (error) {
+          console.error("Erro ao carregar posts:", error);
+        } finally {
+          isLoading = false;
+          document.getElementById("loading").classList.add("hidden");
+        }
+      }
+
+      async function handleLike(postId) {
+        try {
+          const response = await fetch(`/posts/${postId}/like`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          });
+
+          const result = await response.json();
+
+          if (result.error) {
+            alert(result.error);
+            return;
+          }
+
+          const likeBtn = document.querySelector(`[data-post-id="${postId}"]`);
+          const likeCount = likeBtn.querySelector(".like-count");
+          let currentCount = parseInt(likeCount.textContent);
+
+          if (result.liked) {
+            likeCount.textContent = currentCount + 1;
+            likeBtn.classList.add("text-red-500");
+          } else {
+            likeCount.textContent = currentCount - 1;
+            likeBtn.classList.remove("text-red-500");
+          }
+        } catch (error) {
+          console.error("Erro ao dar like:", error);
+          alert("Erro ao processar like");
+        }
+      }
+    </script>
+  </body>
+</html>
