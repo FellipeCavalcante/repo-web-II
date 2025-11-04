@@ -1,11 +1,10 @@
-// app.js - CORRIGIR OS IMPORTS
 import express from "express";
 import session from "express-session";
 import path from "path";
 import { fileURLToPath } from "url";
-import userRouter from "./routers/user-router.js"; // REMOVER src/
-import postRouter from "./routers/post-router.js"; // REMOVER src/
-import { logMiddleware } from "./middleware/log-middleware.js"; // REMOVER src/
+import userRouter from "./routers/user-router.js";
+import postRouter from "./routers/post-router.js";
+import { logMiddleware } from "./middleware/log-middleware.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -36,7 +35,7 @@ app.use("/posts", postRouter);
 
 app.get("/", async (req, res) => {
   try {
-    const { PostService } = await import("./service/post-service.js"); // CORRIGIR CAMINHO
+    const { PostService } = await import("./service/post-service.js");
     const postService = new PostService();
 
     const page = parseInt(req.query.page) || 1;
