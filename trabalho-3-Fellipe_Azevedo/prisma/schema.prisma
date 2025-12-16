@@ -1,0 +1,118 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum PollVisibility {
+  PUBLIC
+  PRIVATE
+}
+
+enum PollStatus {
+  OPEN
+  CLOSED
+  DRAFT
+}
+
+model User {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email      String   @unique @db.VarChar(100)
+  name       String   @db.VarChar(100)
+  password   String   @db.VarChar(255)
+  created_at DateTime @default(now())
+
+  polls_created Poll[]
+  votes         Vote[]
+
+  @@map("users")
+}
+
+model Poll {
+  id             String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title          String         @db.VarChar(255)
+  description    String?        @db.Text
+  image_data     Bytes?
+  image_type     String?        @db.VarChar(50)
+  visibility     PollVisibility @default(PUBLIC)
+  status         PollStatus     @default(OPEN)
+  start_at       DateTime       @default(now())
+  end_at         DateTime?
+  expected_votes Int?
+  created_at     DateTime       @default(now())
+  updated_at     DateTime       @updatedAt
+
+  creator_id String         @db.Uuid
+  creator    User           @relation(fields: [creator_id], references: [id], onDelete: Cascade)
+  options    PollOption[]
+  votes      Vote[]
+  categories PollCategory[]
+
+  @@index([creator_id])
+  @@index([status])
+  @@index([visibility])
+  @@index([start_at])
+  @@index([end_at])
+  @@map("polls")
+}
+
+model PollOption {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  text       String   @db.VarChar(255)
+  image_data Bytes?
+  image_type String?  @db.VarChar(50)
+  position   Int      @default(0)
+  created_at DateTime @default(now())
+
+  poll_id String @db.Uuid
+  poll    Poll   @relation(fields: [poll_id], references: [id], onDelete: Cascade)
+  votes   Vote[]
+
+  @@index([poll_id])
+  @@map("poll_options")
+}
+
+model Category {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name       String   @unique @db.VarChar(100)
+  slug       String   @unique @db.VarChar(100)
+  created_at DateTime @default(now())
+
+  polls PollCategory[]
+
+  @@map("categories")
+}
+
+model PollCategory {
+  poll_id     String @db.Uuid
+  category_id String @db.Uuid
+
+  poll     Poll     @relation(fields: [poll_id], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [category_id], references: [id], onDelete: Cascade)
+
+  @@id([poll_id, category_id])
+  @@index([poll_id])
+  @@index([category_id])
+  @@map("poll_categories")
+}
+
+model Vote {
+  id       String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  voted_at DateTime @default(now())
+
+  user_id String @db.Uuid
+  user    User   @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  poll_id String @db.Uuid
+  poll    Poll   @relation(fields: [poll_id], references: [id], onDelete: Cascade)
+
+  option_id String     @db.Uuid
+  option    PollOption @relation(fields: [option_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, poll_id])
+  @@index([poll_id])
+  @@index([option_id])
+  @@map("votes")
+}
