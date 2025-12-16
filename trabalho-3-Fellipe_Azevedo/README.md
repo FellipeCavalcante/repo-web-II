@@ -69,7 +69,7 @@ Antes de começar, você precisa ter instalado:
 ### 1. Clone o repositório
 
 ```bash
-git clone <url-do-repositorio>
+git clone https://github.com/FellipeCavalcante/repo-web-II.git
 cd trabalho-3-Fellipe_Azevedo
 ```
 
@@ -413,3 +413,4 @@ Este projeto foi desenvolvido para fins acadêmicos.
 ---
 
 ⭐ Se este projeto foi útil, considere dar uma estrela!
+
